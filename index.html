@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心理年龄测试 | 探索你的内心年龄</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .screen { display: none; width: 100%; max-width: 680px; }
+    .screen.active { display: block; }
+
+    /* ── Welcome ── */
+    .welcome-card {
+      background: #fff;
+      border-radius: 28px;
+      padding: 52px 44px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+    }
+    .logo {
+      width: 88px; height: 88px;
+      background: linear-gradient(135deg, #6c63ff, #a29bfe);
+      border-radius: 24px;
+      margin: 0 auto 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px;
+    }
+    .welcome-card h1 { font-size: 30px; color: #1e1b4b; font-weight: 800; margin-bottom: 12px; }
+    .welcome-card .sub {
+      color: #64748b; font-size: 15px; line-height: 1.7; margin-bottom: 36px;
+    }
+    .features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 36px;
+    }
+    .feat {
+      background: #f8f7ff; border-radius: 14px; padding: 18px 16px; text-align: left;
+      border: 1px solid #ede9fe;
+    }
+    .feat-icon { font-size: 26px; margin-bottom: 8px; }
+    .feat-title { font-size: 14px; font-weight: 700; color: #312e81; }
+    .feat-desc { font-size: 12px; color: #64748b; margin-top: 3px; }
+    .note { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
+
+    /* Age Selector */
+    .age-selector {
+      background: #f8f7ff; border: 1.5px solid #ede9fe;
+      border-radius: 18px; padding: 22px 24px 18px;
+      margin-bottom: 22px; text-align: center;
+    }
+    .age-selector-label {
+      font-size: 14px; font-weight: 700; color: #4c1d95; margin-bottom: 10px;
+    }
+    .age-display-wrap { margin-bottom: 16px; line-height: 1; }
+    .age-display-num {
+      font-size: 52px; font-weight: 900; color: #6c63ff; letter-spacing: -2px;
+    }
+    .age-display-unit { font-size: 20px; font-weight: 700; color: #6c63ff; margin-left: 3px; }
+    .age-slider {
+      width: 100%; -webkit-appearance: none; appearance: none;
+      height: 7px; border-radius: 4px; outline: none; cursor: pointer;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #6c63ff 21.4%, #e2e8f0 21.4%);
+    }
+    .age-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 26px; height: 26px;
+      border-radius: 50%; background: #fff;
+      border: 3px solid #6c63ff;
+      box-shadow: 0 2px 10px rgba(108,99,255,.45); cursor: pointer;
+    }
+    .age-slider::-moz-range-thumb {
+      width: 26px; height: 26px; border-radius: 50%; background: #fff;
+      border: 3px solid #6c63ff;
+      box-shadow: 0 2px 10px rgba(108,99,255,.45); cursor: pointer;
+    }
+    .age-slider-labels {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: #94a3b8;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6c63ff, #a29bfe);
+      color: #fff; border: none;
+      padding: 16px 0; border-radius: 50px;
+      font-size: 17px; font-weight: 700;
+      cursor: pointer; width: 100%;
+      transition: transform .2s, box-shadow .2s;
+      letter-spacing: .5px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(108,99,255,.42);
+    }
+
+    /* ── Quiz ── */
+    .quiz-card {
+      background: #fff;
+      border-radius: 28px;
+      padding: 40px 40px 36px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+    }
+    .prog-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
+    }
+    .prog-label { font-size: 13px; color: #94a3b8; white-space: nowrap; }
+    .prog-bar {
+      flex: 1; height: 7px; background: #f1f5f9; border-radius: 4px; overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6c63ff, #a29bfe);
+      border-radius: 4px;
+      transition: width .45s cubic-bezier(.4,0,.2,1);
+    }
+    .dim-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0efff; color: #6c63ff;
+      font-size: 12px; font-weight: 700;
+      padding: 5px 14px; border-radius: 20px;
+      border: 1px solid #ddd6fe;
+      margin-bottom: 18px;
+    }
+    .q-text {
+      font-size: 19px; font-weight: 700; color: #1e1b4b;
+      line-height: 1.55; margin-bottom: 28px;
+    }
+    .options { display: flex; flex-direction: column; gap: 11px; }
+    .opt-btn {
+      background: #f8fafc; border: 2px solid #e2e8f0;
+      border-radius: 14px; padding: 15px 18px;
+      text-align: left; cursor: pointer;
+      font-size: 15px; color: #334155;
+      line-height: 1.5;
+      transition: all .18s;
+    }
+    .opt-btn:hover { border-color: #a29bfe; background: #f5f3ff; }
+    .opt-btn.selected { border-color: #6c63ff; background: #f0efff; color: #3730a3; }
+
+    /* ── Results ── */
+    .results-card {
+      background: #fff; border-radius: 28px;
+      padding: 40px 40px 44px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+    }
+
+    .age-hero {
+      text-align: center;
+      background: #fff;
+      border-radius: 22px; padding: 36px 24px 28px;
+      color: #1e1b4b; margin-bottom: 36px;
+      border: 1.5px solid #ede9fe;
+      box-shadow: 0 4px 24px rgba(108,99,255,.09);
+    }
+    .age-hero-label {
+      font-size: 22px; font-weight: 800; margin-bottom: 20px; letter-spacing: .3px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    /* Circle */
+    .age-circle {
+      width: 156px; height: 156px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 32px rgba(108,99,255,.38), 0 0 0 8px rgba(108,99,255,.08);
+    }
+    .age-circle-num {
+      font-size: 64px; font-weight: 900; line-height: 1;
+      letter-spacing: -3px; color: #fff;
+    }
+    .age-circle-unit { font-size: 17px; font-weight: 600; color: rgba(255,255,255,.9); margin-top: 3px; }
+    .age-hero-type {
+      font-size: 17px; font-weight: 700; color: #6c63ff;
+      background: #f0efff; border: 1px solid #ddd6fe;
+      display: inline-block; padding: 6px 22px; border-radius: 30px;
+      margin-top: 2px;
+    }
+    /* Compare banner */
+    .age-compare-banner {
+      margin-top: 16px; background: #f8f7ff;
+      border: 1px solid #ede9fe;
+      border-radius: 14px; padding: 13px 16px;
+      font-size: 14px; font-weight: 600; color: #374151;
+      display: flex; align-items: flex-start; gap: 9px;
+      text-align: left; line-height: 1.6;
+    }
+    .age-compare-banner .cmp-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+    .section { margin-bottom: 34px; }
+    .section-head {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 17px; font-weight: 800; color: #1e1b4b;
+      margin-bottom: 18px;
+    }
+    .section-head .bar {
+      width: 4px; height: 20px;
+      background: linear-gradient(180deg,#6c63ff,#a29bfe);
+      border-radius: 2px; flex-shrink: 0;
+    }
+
+    /* Radar */
+    .chart-wrap {
+      position: relative; height: 290px; max-width: 340px; margin: 0 auto 20px;
+    }
+
+    /* Dim cards */
+    .dim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .dim-card { background: #f8f7ff; border-radius: 13px; padding: 14px 16px; }
+    .dim-name { font-size: 13px; color: #64748b; margin-bottom: 7px; font-weight: 600; }
+    .dim-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+    .dim-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+    .dim-level { font-size: 12px; font-weight: 700; }
+
+    /* Analysis */
+    .analysis-box {
+      background: #f8f7ff; border-radius: 14px;
+      padding: 22px; font-size: 15px; line-height: 1.75; color: #374151;
+      border-left: 4px solid #a29bfe;
+    }
+
+    /* Lists */
+    .tag-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .tag-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 13px 16px; border-radius: 12px;
+      font-size: 14px; line-height: 1.55; color: #374151;
+    }
+    .tag-list li .ico { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+    .adv-list li { background: #f0fdf4; }
+    .sug-list li { background: #fff7ed; }
+
+    .btn-restart {
+      background: linear-gradient(135deg, #6c63ff, #a29bfe);
+      color: #fff; border: none;
+      padding: 15px 0; border-radius: 50px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; width: 100%;
+      margin-top: 8px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-restart:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(108,99,255,.4);
+    }
+
+    @media(max-width:520px){
+      body { padding: 14px 10px; }
+      .welcome-card, .quiz-card, .results-card { padding: 28px 20px; }
+      .features { grid-template-columns: 1fr; }
+      .age-hero-num { font-size: 64px; }
+      .dim-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ WELCOME ══ -->
+<div class="screen active" id="screen-welcome">
+  <div class="welcome-card">
+    <div class="logo">🧠</div>
+    <h1>心理年龄测试</h1>
+    <p class="sub">通过 30 道精心设计的问题，<br>科学测评你真实的心理成熟度与内在年龄</p>
+    <div class="features">
+      <div class="feat">
+        <div class="feat-icon">🎯</div>
+        <div class="feat-title">心理年龄测定</div>
+        <div class="feat-desc">精准计算内心年龄</div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">五维能力分析</div>
+        <div class="feat-desc">雷达图可视化呈现</div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">🔍</div>
+        <div class="feat-title">深度综合分析</div>
+        <div class="feat-desc">解读你的心理特质</div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">🌱</div>
+        <div class="feat-title">个性成长建议</div>
+        <div class="feat-desc">量身定制提升方向</div>
+      </div>
+    </div>
+    <p class="note">约需 5–8 分钟 · 共 30 道题 · 结果完全保密</p>
+
+    <div class="age-selector">
+      <div class="age-selector-label">请先告诉我们您的实际年龄</div>
+      <div class="age-display-wrap">
+        <span class="age-display-num" id="age-display-num">25</span><span class="age-display-unit">岁</span>
+      </div>
+      <input type="range" class="age-slider" id="age-slider"
+             min="10" max="80" value="25"
+             oninput="updateAgeDisplay(this.value)">
+      <div class="age-slider-labels">
+        <span>10岁</span><span>45岁</span><span>80岁</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="startTest()">开始测试</button>
+  </div>
+</div>
+
+<!-- ══ QUIZ ══ -->
+<div class="screen" id="screen-quiz">
+  <div class="quiz-card">
+    <div class="prog-header">
+      <span class="prog-label" id="prog-label">1 / 30</span>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:3.33%"></div></div>
+      <span class="prog-label" id="prog-pct">3%</span>
+    </div>
+    <div class="dim-badge" id="dim-badge">情感成熟度</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div class="screen" id="screen-results">
+  <div class="results-card">
+
+    <div class="age-hero">
+      <div class="age-hero-label">您的心理年龄测试结果</div>
+      <div class="age-circle">
+        <div class="age-circle-num" id="r-age">--</div>
+        <div class="age-circle-unit">岁</div>
+      </div>
+      <div class="age-hero-type" id="r-type"></div>
+      <div class="age-compare-banner" id="age-compare-banner" style="display:none">
+        <span class="cmp-icon" id="cmp-icon"></span>
+        <span id="cmp-text"></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="bar"></div>五维能力分析</div>
+      <div class="chart-wrap"><canvas id="radar-chart"></canvas></div>
+      <div class="dim-grid" id="dim-grid"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="bar"></div>综合分析</div>
+      <div class="analysis-box" id="r-analysis"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="bar"></div>主要优势</div>
+      <ul class="tag-list adv-list" id="r-advantages"></ul>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="bar"></div>成长建议</div>
+      <ul class="tag-list sug-list" id="r-suggestions"></ul>
+    </div>
+
+    <button class="btn-restart" onclick="restartTest()">重新测试</button>
+  </div>
+</div>
+
+<script>
+// ─── 数据配置 ───────────────────────────────────────────────
+const DIMS = ['情感成熟度', '认知能力', '社交能力', '自我认知', '责任感'];
+const DIM_COLORS = ['#6c63ff','#fd79a8','#00b894','#fdcb6e','#e17055'];
+
+const QUESTIONS = [
+  // 情感成熟度 ×6
+  { dim:0, text:'当你感到愤怒或受伤时，你通常会怎么做？', opts:[
+    { t:'立即情绪爆发，大声争吵或指责对方', s:1 },
+    { t:'把情绪压抑在心里，假装没事', s:2 },
+    { t:'冷静下来再沟通，但有时还是会情绪化', s:3 },
+    { t:'清楚表达感受，寻找建设性的解决方法', s:4 },
+  ]},
+  { dim:0, text:'面对重大失去（如失恋、失业等），你的恢复方式是？', opts:[
+    { t:'长时间无法走出，反复纠结和回忆', s:1 },
+    { t:'用娱乐或社交来麻痹自己，不愿面对', s:2 },
+    { t:'允许自己悲伤，同时积极尝试向前看', s:3 },
+    { t:'从经历中找到意义，较快重建生活节奏', s:4 },
+  ]},
+  { dim:0, text:'你如何处理嫉妒或羡慕的情绪？', opts:[
+    { t:'难以接受，常感到愤恨或不服气', s:1 },
+    { t:'压抑这种感觉，不愿承认它的存在', s:2 },
+    { t:'承认这种感觉，偶尔会被其影响', s:3 },
+    { t:'将其转化为动力，欣赏并向对方学习', s:4 },
+  ]},
+  { dim:0, text:'当你感到极大焦虑或压力时，你会？', opts:[
+    { t:'完全被情绪淹没，无法正常生活和工作', s:1 },
+    { t:'通过暴食、过度购物等方式发泄', s:2 },
+    { t:'有一些应对方法，但效果不够稳定', s:3 },
+    { t:'有成熟的调节机制，能有效管理压力', s:4 },
+  ]},
+  { dim:0, text:'面对批评和否定，你通常的反应是？', opts:[
+    { t:'立刻产生强烈的防御或反击反应', s:1 },
+    { t:'表面接受，内心极度不舒服甚至崩溃', s:2 },
+    { t:'能接受批评，但需要时间消化情绪', s:3 },
+    { t:'冷静分析批评，提取有价值的信息', s:4 },
+  ]},
+  { dim:0, text:'当你的需求与重要他人发生冲突时？', opts:[
+    { t:'完全放弃自己的需求，委曲求全', s:1 },
+    { t:'坚持自己，完全不考虑对方感受', s:2 },
+    { t:'寻求妥协，但有时感到委屈或不满', s:3 },
+    { t:'坦诚沟通，寻找双方都满意的方案', s:4 },
+  ]},
+
+  // 认知能力 ×6
+  { dim:1, text:'面对一个复杂的问题，你会怎么处理？', opts:[
+    { t:'凭直觉行动，不做过多分析', s:1 },
+    { t:'希望别人直接告诉我答案', s:2 },
+    { t:'收集一些信息后再做决定', s:3 },
+    { t:'系统分析，评估各种可能性后再行动', s:4 },
+  ]},
+  { dim:1, text:'你如何看待与自己截然不同的观点？', opts:[
+    { t:'认为对方是错的，不愿深入了解', s:1 },
+    { t:'感到困惑，通常会回避相关讨论', s:2 },
+    { t:'尝试理解，但有时仍会持有偏见', s:3 },
+    { t:'主动探索，认为多元观点是宝贵资源', s:4 },
+  ]},
+  { dim:1, text:'对于持续学习新知识或技能，你的态度是？', opts:[
+    { t:'觉得麻烦，能不学就不学', s:1 },
+    { t:'只在被迫或有利益驱动时才学', s:2 },
+    { t:'有兴趣时会学，但坚持度不够', s:3 },
+    { t:'保持持续的学习热情和自主学习习惯', s:4 },
+  ]},
+  { dim:1, text:'当你犯了明显错误时，第一反应是？', opts:[
+    { t:'否认或找借口，不愿承认是自己的问题', s:1 },
+    { t:'过度自责，反复懊悔无法向前看', s:2 },
+    { t:'承认错误，但分析不够深入', s:3 },
+    { t:'冷静分析原因，制定改进计划', s:4 },
+  ]},
+  { dim:1, text:'面对不确定性和未知的情况，你会？', opts:[
+    { t:'极度焦虑，尽量回避不确定的情况', s:1 },
+    { t:'感到不安，倾向于维持熟悉的现状', s:2 },
+    { t:'能接受一定程度的不确定性', s:3 },
+    { t:'视不确定性为机遇，享受探索未知', s:4 },
+  ]},
+  { dim:1, text:'你如何做重要的人生决定？', opts:[
+    { t:'随机决定或让别人替我决定', s:1 },
+    { t:'主要依赖当下感觉，不做深入思考', s:2 },
+    { t:'考虑主要因素，但可能遗漏一些方面', s:3 },
+    { t:'全面权衡利弊，为可能结果做好准备', s:4 },
+  ]},
+
+  // 社交能力 ×6
+  { dim:2, text:'在陌生的社交场合中，你通常？', opts:[
+    { t:'感到极度不适，尽量回避这类场合', s:1 },
+    { t:'只与熟悉的人交流，很难主动接触新人', s:2 },
+    { t:'能参与其中，但有时感到不自在', s:3 },
+    { t:'自如地与不同类型的人建立联系', s:4 },
+  ]},
+  { dim:2, text:'当朋友或家人遇到困难时，你会？', opts:[
+    { t:'不知道如何回应，通常选择回避', s:1 },
+    { t:'给出大量建议，告诉他们应该怎么做', s:2 },
+    { t:'提供帮助，但有时不确定边界在哪里', s:3 },
+    { t:'先倾听理解需求，再提供适当的支持', s:4 },
+  ]},
+  { dim:2, text:'面对人际冲突，你倾向于？', opts:[
+    { t:'逃避，希望问题随时间自行消失', s:1 },
+    { t:'非赢即输，必须让对方认错道歉', s:2 },
+    { t:'尽量和平解决，但有时妥协过多', s:3 },
+    { t:'直接沟通，寻求双方都能接受的方案', s:4 },
+  ]},
+  { dim:2, text:'你如何对待维护长期关系？', opts:[
+    { t:'觉得麻烦，认为关系顺其自然就好', s:1 },
+    { t:'依赖性很强，对关系有很多期待和要求', s:2 },
+    { t:'有付出但不够稳定，关系时好时坏', s:3 },
+    { t:'持续投入时间和精力，珍惜重要关系', s:4 },
+  ]},
+  { dim:2, text:'当你需要拒绝别人的请求时？', opts:[
+    { t:'完全无法拒绝，总是答应即使不情愿', s:1 },
+    { t:'直接拒绝，不太考虑对方感受', s:2 },
+    { t:'能拒绝，但事后常感到内疚', s:3 },
+    { t:'礼貌而坚定地表达自己的立场和原因', s:4 },
+  ]},
+  { dim:2, text:'在团队合作中，你通常？', opts:[
+    { t:'只关注自己的任务，不在乎整体结果', s:1 },
+    { t:'希望主导一切，难以听取他人意见', s:2 },
+    { t:'能配合合作，但有时沟通不顺畅', s:3 },
+    { t:'灵活适应不同角色，促进团队整体效率', s:4 },
+  ]},
+
+  // 自我认知 ×6
+  { dim:3, text:'对于自己的性格特点和内在模式，你？', opts:[
+    { t:'很少思考这些，活在当下就好', s:1 },
+    { t:'对自己有固定的标签，认为很难改变', s:2 },
+    { t:'有一定了解，但存在一些认知盲区', s:3 },
+    { t:'持续探索自我，有清晰且动态的自我认知', s:4 },
+  ]},
+  { dim:3, text:'你认为自己的价值主要来自于？', opts:[
+    { t:'他人的认可、赞美和接受', s:1 },
+    { t:'成就、地位和外在表现', s:2 },
+    { t:'成就与内在品质的结合', s:3 },
+    { t:'内在稳定的价值观，不过度依赖外部评价', s:4 },
+  ]},
+  { dim:3, text:'对于自己的人生目标和方向，你？', opts:[
+    { t:'没有明确目标，随波逐流就好', s:1 },
+    { t:'有目标，但主要是为了满足他人的期望', s:2 },
+    { t:'有自己的目标，但时常动摇和怀疑', s:3 },
+    { t:'有清晰真实的人生方向，持续努力实现', s:4 },
+  ]},
+  { dim:3, text:'面对自己明显的缺点，你会？', opts:[
+    { t:'否认，认为问题都出在别人或环境身上', s:1 },
+    { t:'知道但感到无力，不知道如何改变', s:2 },
+    { t:'努力尝试改变，但进步缓慢', s:3 },
+    { t:'接受并积极寻找改进的具体方法', s:4 },
+  ]},
+  { dim:3, text:'你对自己情绪的了解程度如何？', opts:[
+    { t:'很少关注情绪，常常被情绪控制而不自知', s:1 },
+    { t:'能感知到情绪的存在，但不理解其根源', s:2 },
+    { t:'能理解大部分情绪，偶尔会感到困惑', s:3 },
+    { t:'清晰了解自己的情绪模式和触发点', s:4 },
+  ]},
+  { dim:3, text:'关于个人成长，你认为？', opts:[
+    { t:'人的性格是固定的，改变几乎不可能', s:1 },
+    { t:'希望改变，但不知从何开始', s:2 },
+    { t:'在某些特定方面有意识地成长', s:3 },
+    { t:'视成长为终身旅程，持续反思和进化', s:4 },
+  ]},
+
+  // 责任感 ×6
+  { dim:4, text:'对于自己做出的承诺，你？', opts:[
+    { t:'经常忘记或食言，事后找借口', s:1 },
+    { t:'尽力做到，但遇到困难时会放弃', s:2 },
+    { t:'大多数时候能履行，偶有失约', s:3 },
+    { t:'认真对待每个承诺，即使困难也会兑现', s:4 },
+  ]},
+  { dim:4, text:'当你的决定影响到他人时，你会？', opts:[
+    { t:'主要考虑自己的利益和便利', s:1 },
+    { t:'意识到影响，但仍以自身利益为优先', s:2 },
+    { t:'尽量平衡各方，但不总是成功', s:3 },
+    { t:'认真权衡所有相关人的影响，寻求最优方案', s:4 },
+  ]},
+  { dim:4, text:'面对需要帮助的陌生人或弱势群体，你会？', opts:[
+    { t:'觉得与己无关，不想惹麻烦', s:1 },
+    { t:'感到同情但通常不采取行动', s:2 },
+    { t:'在力所能及的范围内提供帮助', s:3 },
+    { t:'积极寻找方式提供有意义的帮助', s:4 },
+  ]},
+  { dim:4, text:'对于自己的身心健康和生活习惯，你？', opts:[
+    { t:'完全不在意，活一天算一天', s:1 },
+    { t:'知道重要性，但难以坚持健康的习惯', s:2 },
+    { t:'有一些健康习惯，但不够全面系统', s:3 },
+    { t:'认真对待身心健康，有可持续的健康习惯', s:4 },
+  ]},
+  { dim:4, text:'面对工作或学习中的重大失误，你会？', opts:[
+    { t:'找借口或将责任推给他人或环境', s:1 },
+    { t:'过度自责，陷入懊悔难以走出', s:2 },
+    { t:'承认错误，努力弥补并吸取教训', s:3 },
+    { t:'坦然承担责任，系统反思并防止重复', s:4 },
+  ]},
+  { dim:4, text:'关于个人行为对社会和环境的责任，你认为？', opts:[
+    { t:'个人无法改变大局，不必过多考虑', s:1 },
+    { t:'有些关注，但日常行为中体现很少', s:2 },
+    { t:'日常有一些环保和社会责任的行为', s:3 },
+    { t:'积极践行社会责任，相信个体行动有意义', s:4 },
+  ]},
+];
+
+// ─── 结果档案 ────────────────────────────────────────────────
+function getProfile(total, dimScores) {
+  // 找出最弱和最强维度
+  const minDim = dimScores.indexOf(Math.min(...dimScores));
+  const maxDim = dimScores.indexOf(Math.max(...dimScores));
+
+  const profiles = [
+    { // 30–50
+      range: [30, 50],
+      type: '率真少年型',
+      age: () => Math.round(12 + ((total - 30) / 20) * 5),   // 12–17
+      analysis: `你拥有年轻活泼的心态，情感真实直接，对世界充满好奇与探索欲。你不喜欢伪装，讨厌繁琐的规则，活得随性自在。目前，在情绪管理和复杂问题应对上仍有较大成长空间——面对挑战时有时会不知所措，情绪容易主导行为。这种真实和率性是你最宝贵的资产，也是成长的起点。`,
+      advantages: ['情感真实，不善于伪装，具有真诚的感染力','对新事物充满好奇心，开放且不设防','行动力强，说到做到、直接果断','活力充沛，为周围带来轻松正向的能量'],
+      suggestions: [
+        '练习"情绪暂停"技巧：在反应前给自己3–5秒的思考空间',
+        '尝试写情绪日记，增加对自己内在感受的觉察',
+        `重点提升「${DIMS[minDim]}」：这是你目前最值得投入的成长方向`,
+        '建立清晰的个人价值观，让每个决定都有更稳固的内核',
+      ],
+    },
+    { // 51–65
+      range: [51, 65],
+      type: '青春探索型',
+      age: () => Math.round(17 + ((total - 51) / 14) * 6),   // 17–23
+      analysis: `你正处于心理成长的活跃探索阶段，充满活力与可能性。你开始思考更深层的问题，对自我和世界有一定的认知，但在经验积累和心理稳定性方面仍在建设中。你的学习热情和社交活力是重要优势，只要方向清晰，成长速度会非常惊人。`,
+      advantages: ['适应能力强，面对变化相对灵活','充满热情和创造力，思维跳跃活跃','社交活跃，容易与他人建立初步连接','对学习和新体验保持开放的心态'],
+      suggestions: [
+        '深化自我认知：定期反思自己的行为模式和情绪触发点',
+        '学习有效的情绪调节技巧，如正念冥想或认知重构',
+        `着重发展「${DIMS[minDim]}」，补足短板将带来质的跨越`,
+        '建立更清晰的个人目标，学会区分内在真实需求和外在期望',
+      ],
+    },
+    { // 66–80
+      range: [66, 80],
+      type: '成熟稳进型',
+      age: () => Math.round(23 + ((total - 66) / 14) * 9),   // 23–32
+      analysis: `你正处于心理成熟的关键阶段，已积累了相当的生活智慧和自我认知。你能较好地平衡情感与理性，在人际关系中展现出理解和包容。偶尔在压力下仍会有情绪波动，但你有能力从中调整和复原。你已建立了坚实的心理基础，接下来的成长是精细化和深化。`,
+      advantages: ['能在大多数情况下平衡情感与理性','具备较好的问题解决能力和决策思维','建立了较为稳定的人际关系网络','有持续的自我认知和主动成长意识'],
+      suggestions: [
+        '进一步精细化情绪管理：识别具体触发点并建立个性化应对策略',
+        '深化自我认知，探索深层价值观和人生意义',
+        `「${DIMS[minDim]}」是你的成长突破口，值得重点投入`,
+        '寻找一位导师或成长伙伴，支持彼此走向更深层的蜕变',
+      ],
+    },
+    { // 81–95
+      range: [81, 95],
+      type: '睿智成熟型',
+      age: () => Math.round(32 + ((total - 81) / 14) * 11),  // 32–43
+      analysis: `你展现出高度的心理成熟度，在情绪管理、认知思维、社交能力、自我认知和责任感各方面均表现出色。你能有效处理复杂局面，在人际关系中展现深刻的理解与包容。你的心理稳定性和智慧使你成为他人眼中值得信赖的存在，也是你在各领域持续成功的底层力量。`,
+      advantages: ['出色的情绪稳定性和压力管理能力','系统的决策思维，能权衡复杂局面','真诚且有深度的人际关系建立能力','清晰的自我认知与强大的责任担当'],
+      suggestions: [
+        '将你的智慧和经验分享给需要引导的人，成为他人的支持者',
+        `在「${DIMS[minDim]}」上追求更高境界，让短板不再成为天花板`,
+        '保持对新事物的好奇心，避免陷入过度舒适区',
+        '探索更深层的精神成长或人生哲学，进一步丰富内在世界',
+      ],
+    },
+    { // 96–110
+      range: [96, 110],
+      type: '通达智慧型',
+      age: () => Math.round(43 + ((total - 96) / 14) * 12),  // 43–55
+      analysis: `你拥有令人钦佩的心理成熟度，在各个维度均展现出卓越能力。你不仅出色地管理自己的情绪和生活，更具备深刻的自我认知和对他人的理解与包容。你对生活有清晰的方向感，并能将个人责任与更广泛的社会责任有机结合。你是周围人的定海神针，影响力自然而深远。`,
+      advantages: ['全面均衡的心理成熟度，各维度协调发展','强大的内在稳定性，不易被外界动摇','深邃的人际洞察力和高质量共情能力','将个人成长与社会贡献有机结合'],
+      suggestions: [
+        '积极成为他人成长的引导者和支持者，传递你的智慧',
+        '在你热爱的领域追求卓越，挑战更高境界的精神成长',
+        '保持谦逊与开放，持续从不同年龄和背景的人身上汲取养分',
+        '探索如何将你的洞见转化为对更多人有益的价值和贡献',
+      ],
+    },
+    { // 111–120
+      range: [111, 120],
+      type: '融通大智型',
+      age: () => Math.round(55 + ((total - 111) / 9) * 10),  // 55–65
+      analysis: `你达到了极高的心理成熟境界，展现出令人钦佩的内在智慧与从容。你对自己、他人和世界都有深刻的理解，能在各种复杂情况下保持内心的平静与力量。五个维度高度均衡发展，展现出真正的全面成熟。你是一个稀有而珍贵的存在，你的存在本身就是他人的礼物。`,
+      advantages: ['超凡均衡的心理成熟度，五维高度协调','深邃的人生智慧与对人性的透彻理解','卓越的包容力，能接纳复杂多元的存在','强大的内在力量，为他人带来安全感与启发'],
+      suggestions: [
+        '继续探索更高层次的意识与精神成长之路',
+        '你的智慧是宝贵资源，寻找有意义的方式传承和分享',
+        '在生命的每个阶段保持开放，允许持续的蜕变和深化',
+        '以你的存在本身为他人提供力量和启发，这是最深远的贡献',
+      ],
+    },
+  ];
+
+  return profiles.find(p => total >= p.range[0] && total <= p.range[1]) || profiles[profiles.length - 1];
+}
+
+// ─── 状态 ────────────────────────────────────────────────────
+let current = 0;
+let answers = [];
+let chart = null;
+let realAge = 25;
+
+function updateAgeDisplay(val) {
+  realAge = parseInt(val);
+  document.getElementById('age-display-num').textContent = val;
+  const pct = ((val - 10) / 70) * 100;
+  document.getElementById('age-slider').style.background =
+    `linear-gradient(90deg, #6c63ff ${pct}%, #e2e8f0 ${pct}%)`;
+}
+
+function getAgeCompare(psychAge, real) {
+  const diff = real - psychAge;          // 正 = 心理年龄更小
+  const abs  = Math.abs(diff);
+  if (abs <= 2) {
+    return { icon: '⚖️', text: `您的心理年龄与实际年龄（${real}岁）基本持平，内外一致，发展均衡！` };
+  } else if (diff > 0) {
+    return { icon: '🌟', text: `您的心理年龄比实际年龄（${real}岁）小 ${abs} 岁，心态更年轻有活力，充满青春能量！` };
+  } else {
+    return { icon: '🎓', text: `您的心理年龄比实际年龄（${real}岁）大 ${abs} 岁，比同龄人更加成熟稳重，思维深邃！` };
+  }
+}
+
+// ─── 逻辑 ────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startTest() {
+  current = 0; answers = [];
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  const total = QUESTIONS.length;
+  const pct = Math.round(((current + 1) / total) * 100);
+
+  document.getElementById('prog-label').textContent = `${current + 1} / ${total}`;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('dim-badge').textContent = DIMS[q.dim];
+  document.getElementById('q-text').textContent = `${current + 1}. ${q.text}`;
+
+  const container = document.getElementById('options');
+  container.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt.t;
+    btn.addEventListener('click', () => choose(opt.s, i));
+    container.appendChild(btn);
+  });
+}
+
+function choose(score, idx) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.opt-btn')[idx].classList.add('selected');
+  answers.push({ dim: QUESTIONS[current].dim, score });
+
+  setTimeout(() => {
+    current++;
+    if (current < QUESTIONS.length) {
+      renderQuestion();
+    } else {
+      showResultsPage();
+    }
+  }, 380);
+}
+
+function calcScores() {
+  const dimScores = [0, 0, 0, 0, 0];
+  answers.forEach(a => dimScores[a.dim] += a.score);
+  const total = dimScores.reduce((s, v) => s + v, 0);
+  return { dimScores, total };
+}
+
+function animateNumber(el, target, duration = 1200) {
+  const start = Date.now();
+  const tick = () => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(ease * target);
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function dimLevelInfo(score) {
+  if (score <= 12) return { label: '待提升', color: '#e17055' };
+  if (score <= 18) return { label: '良好',   color: '#fdcb6e' };
+  return               { label: '优秀',   color: '#00b894' };
+}
+
+function showResultsPage() {
+  const { dimScores, total } = calcScores();
+  const profile = getProfile(total, dimScores);
+  const psychAge = Math.max(12, Math.min(70, profile.age()));
+
+  showScreen('screen-results');
+
+  // Age count-up
+  animateNumber(document.getElementById('r-age'), psychAge);
+  document.getElementById('r-type').textContent = profile.type;
+
+  // Age comparison
+  const cmp = getAgeCompare(psychAge, realAge);
+  const banner = document.getElementById('age-compare-banner');
+  document.getElementById('cmp-icon').textContent = cmp.icon;
+  document.getElementById('cmp-text').textContent  = cmp.text;
+  banner.style.display = 'flex';
+
+  // Analysis
+  document.getElementById('r-analysis').textContent = profile.analysis;
+
+  // Advantages
+  document.getElementById('r-advantages').innerHTML =
+    profile.advantages.map(a => `<li><span class="ico">✦</span>${a}</li>`).join('');
+
+  // Suggestions
+  document.getElementById('r-suggestions').innerHTML =
+    profile.suggestions.map(s => `<li><span class="ico">→</span>${s}</li>`).join('');
+
+  // Dimension cards
+  document.getElementById('dim-grid').innerHTML = DIMS.map((name, i) => {
+    const pct = Math.round(((dimScores[i] - 6) / 18) * 100);
+    const info = dimLevelInfo(dimScores[i]);
+    return `
+      <div class="dim-card">
+        <div class="dim-name">${name}</div>
+        <div class="dim-bar">
+          <div class="dim-fill" style="width:${pct}%; background:${DIM_COLORS[i]};"></div>
+        </div>
+        <div class="dim-level" style="color:${info.color}">${info.label} · ${dimScores[i]}/24</div>
+      </div>`;
+  }).join('');
+
+  // Radar chart
+  setTimeout(() => {
+    if (chart) { chart.destroy(); chart = null; }
+    const ctx = document.getElementById('radar-chart').getContext('2d');
+    const pcts = dimScores.map(s => Math.round(((s - 6) / 18) * 100));
+    chart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: DIMS,
+        datasets: [{
+          data: pcts,
+          backgroundColor: 'rgba(108,99,255,0.15)',
+          borderColor: '#6c63ff',
+          borderWidth: 2.5,
+          pointBackgroundColor: DIM_COLORS,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 25, display: false },
+            grid: { color: 'rgba(0,0,0,0.07)' },
+            angleLines: { color: 'rgba(0,0,0,0.07)' },
+            pointLabels: { font: { size: 13, weight: '600' }, color: '#374151' },
+          },
+        },
+        plugins: { legend: { display: false } },
+      },
+    });
+  }, 120);
+}
+
+function restartTest() {
+  current = 0; answers = [];
+  if (chart) { chart.destroy(); chart = null; }
+  showScreen('screen-welcome');
+}
+
+// 页面初始化：同步滑块填充色
+updateAgeDisplay(document.getElementById('age-slider').value);
+</script>
+</body>
+</html>
